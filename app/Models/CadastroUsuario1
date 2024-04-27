@@ -1,0 +1,46 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
+
+class CadastroUsuario extends Model
+{
+    use HasFactory, Notifiable;
+
+    protected $fillable = [
+        'tipo_cadastro','nome_de_usuario', 'celular', 'email',
+        'cep','logradouro', 'numero', 'bairro', 'municipio', 'estado',
+        'complemento','senha','cpf','nascimento', 'genero',     
+        'cnpj', 'razao_social','nome_fantasia','tipo_empresa',
+        'inscricao_estadual', 
+    ];
+
+    protected $hidden = [
+        'senha',
+        'remember_token',
+    ];
+
+    public function setSenhaAttribute($value)
+    {
+        $this->attributes['senha'] = bcrypt($value);
+    }
+
+    public function endereco()
+    {
+        return $this->hasOne(Endereco::class, 'cadastro_usuario_id');
+    }
+
+    public function cadastro_pf()
+    {
+        return $this->hasOne(CadastroPF::class, 'cadastro_usuario_id');
+    }
+
+   
+    public function cadastro_pj()
+    {
+        return $this->hasOne(CadastroPJ::class, 'cadastro_usuario_id');
+    }
+}

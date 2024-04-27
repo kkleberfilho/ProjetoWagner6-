@@ -1,0 +1,126 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\CadastroUsuario;
+use Illuminate\Support\Facades\Validator;
+
+class CadastroController extends Controller
+{
+    public function cadastro()
+    {
+        return view('site.cadastro');
+    }
+
+    public function cadastro_pf()
+    {
+        return view('site.cadastro_pf');
+    }
+
+    public function cadastro_pj()
+    {
+        return view('site.cadastro_pj');
+    }
+
+
+    public function processarCadastro(Request $request)
+    {
+        $validator = $this->validarCadastro($request->all());
+
+        if ($validator->fails()) {
+            return redirect()->route('site.cadastro')
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $this->armazenarCadastro($request->all());
+
+        return redirect()->route('site.sobreNos')->with('success', 'Cadastro realizado com sucesso!');
+    }
+
+    private function validarCadastro(array $dadosCadastro)
+    {
+        $tipoCadastro = $dadosCadastro['tipo_cadastro'] ?? null;
+
+        $regras = [
+            'tipo_cadastro' => 'required|in:pf,pj',
+            'nome_de_usuario' => 'required|string|unique:cadastro_usuarios,nome_de_usuario',
+            'email' => 'required|email|unique:cadastro_usuarios,email',
+            'celular' => 'required|numeric|unique:cadastro_usuarios,celular',
+            'cep' => 'required',
+            'logradouro' => 'required',
+            'numero' => 'required',
+            'bairro' => 'required',
+            'municipio' => 'required',
+            'estado' => 'required',
+            'complemento' => 'nullable',
+            'senha' => 'required|min:6',
+        ];
+
+        $mensagens = [
+            
+        ];
+
+        if ($tipoCadastro === 'pf') {
+            $regras += [
+                'cpf' => 'required|string|unique:cadastro_pf,cpf',
+                'nascimento' => 'required|date',
+                'genero' => 'required|in:masculino,feminino,outro',
+                'nome_completo' => 'required|string',
+            ];
+
+            $mensagens += [
+              
+            ];
+        } elseif ($tipoCadastro === 'pj') {
+            $regras += [
+                'cnpj' => 'required|string|unique:cadastro_pj,cnpj',
+                'inscricao_estadual' => 'required|string|unique:cadastro_pj,inscricao_estadual',
+                'tipo_empresa' => 'required|string',
+                'razao_social' => 'required|string',
+                'nome_fantasia' => 'required|string',
+            ];
+
+            $mensagens += [
+                
+            ];
+        }
+
+        $validator = Validator::make($dadosCadastro, $regras, $mensagens);
+
+        return $validator;
+    }
+
+    private function armazenarCadastro(array $dadosCadastro)
+    {
+        $cadastro_usuario = new CadastroUsuario;
+
+        $cadastro_usuario->nome_de_usuario = $dadosCadastro['nome_de_usuario'];
+        $cadastro_usuario->email = $dadosCadastro['email'];
+        $cadastro_usuario->celular = $dadosCadastro['celular'];
+        $cadastro_usuario->cep = $dadosCadastro['cep'];
+        $cadastro_usuario->logradouro = $dadosCadastro['logradouro'];
+        $cadastro_usuario->numero = $dadosCadastro['numero'];
+        $cadastro_usuario->bairro = $dadosCadastro['bairro'];
+        $cadastro_usuario->municipio = $dadosCadastro['municipio'];
+        $cadastro_usuario->estado = $dadosCadastro['estado'];
+        $cadastro_usuario->complemento = $dadosCadastro['complemento'] ?? null;
+        $cadastro_usuario->senha = bcrypt($dadosCadastro['senha']);
+
+        
+        $camposPF = ['cpf', 'nascimento', 'genero', 'nome_completo'];
+        $camposPJ = ['cnpj', 'inscricao_estadual', 'tipo_empresa', 'razao_social', 'nome_fantasia'];
+
+        foreach ($camposPF as $campo) {
+            $cadastro_usuario->$campo = $dadosCadastro[$campo] ?? null;
+        }
+
+        foreach ($camposPJ as $campo) {
+            $cadastro_usuario->$campo = $dadosCadastro[$campo] ?? null;
+        }
+
+        $cadastro_usuario->save();
+    }
+
+}
