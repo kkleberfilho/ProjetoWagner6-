@@ -3,10 +3,10 @@
 @section('titulo', 'Cadastro PJ')
 
 @section('conteudo')
-    
+
 
     <div class="cadastro">
-        <div class="cadastro_tamanho"> 
+        <div class="cadastro_tamanho">
             <h1>Cadastro</h1>
             <form action="{{ route('site.cadastro_pj') }}" method="post">
                 @csrf
@@ -67,14 +67,14 @@
                         <p class="error-message">{{ $message }}</p>
                         @enderror
                     <br>
-                    <input type="password" name="senha" id="senha" placeholder="Senha" class="borda-preta">
+                    <input type="password" name="password" id="senha" placeholder="Senha" class="borda-preta">
                     <br>
                 </div>
 
                 <button type="submit" class="borda-preta">ENVIAR</button>
             </form>
         </div>
-    </div>    
+    </div>
 
     @if($errors->any())
         <div class="alert alert-danger">
@@ -92,8 +92,8 @@
             var camposPj = document.getElementById('campos-pj');
 
             if (tipoCadastro === 'pj') {
-                mostrarCamposPJ(); 
-                camposPj.style.display = 'block'; 
+                mostrarCamposPJ();
+                camposPj.style.display = 'block';
             } else if (tipoCadastro === 'pf') {
                 camposPj.style.display = 'none';
             } else {
@@ -101,7 +101,7 @@
             }
         }
 
-        function mostrarCamposPJ() { 
+        function mostrarCamposPJ() {
             var camposPj = document.getElementById('campos-pj');
             camposPj.style.display = 'block';
         }

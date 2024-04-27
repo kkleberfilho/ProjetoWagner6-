@@ -15,7 +15,7 @@ class LoginController extends Controller
     public function login()
     {
         Log::debug('Login request received.');
-        return view('site.login'); 
+        return view('site.login');
     }
 
     public function verificarLogin(Request $request)
@@ -35,9 +35,9 @@ class LoginController extends Controller
             Log::debug('Senha fornecida: ' . $request->input('senha'));
 
             $credentials = $request->only('email', 'senha');
-            
+
             // $credentials['senha'] = bcrypt($credentials['senha']);
-    
+
 
             Log::debug('Attempting authentication with credentials: ' . json_encode($credentials));
 
@@ -47,13 +47,13 @@ class LoginController extends Controller
                 return redirect()->intended(route('site.home'));
             }
 
-           
+
             Log::debug('Authentication failed.');
 
             return redirect()->route('site.login')->with('error', 'Credenciais inválidas. Verifique seu e-mail e senha.');
-       
+
         } catch (\Exception $e) {
-           
+
             Log::error('Exception occurred during login: ' . $e->getMessage());
             return redirect()->route('site.login')->with('error', 'Ocorreu um erro durante o processo de login. Por favor, tente novamente mais tarde.');
         }

@@ -7,6 +7,7 @@ use App\Models\CadastroUsuario;
 use App\Models\CadastroPF;
 use App\Models\CadastroPJ;
 use App\Models\Endereco;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -35,26 +36,26 @@ class CadastroController extends Controller
     public function store(Request $request)
     {
         Log::info('Tipo de Cadastro: ' . $request->input('tipo_cadastro'));
-       
+
         #Valida os dados recebidos do form
         $validator = $this->validarCadastro($request->all());
-    
+
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
-    
+
         DB::beginTransaction();
-    
+
         try {
-            #Cria o cadastro usuário 
+            #Cria o cadastro usuário
             $cadastroUsuario = CadastroUsuario::create(Arr::except($request->all(), ['enderecos', 'cadastro_pf', 'cadastro_pj']));
-            
-           #Faz a associação do endereço ao cadastro usuário 
+
+           #Faz a associação do endereço ao cadastro usuário
             $endereco = $this->criarEndereco($request->all(), $cadastroUsuario);
-    
-            #Reconhece sé é cadastro pf ou pj e direciona os dados para a tabela 
+
+            #Reconhece sé é cadastro pf ou pj e direciona os dados para a tabela
             $tipoCadastro = $request->input('tipo_cadastro');
-    
+
             if ($tipoCadastro === 'pf') {
                 $cadastroPF = $this->criarCadastroPF($request->all());
                 $cadastroUsuario->cadastro_pf()->save($cadastroPF);
@@ -62,18 +63,18 @@ class CadastroController extends Controller
                 $cadastroPJ = $this->criarCadastroPJ($request->all());
                 $cadastroUsuario->cadastro_pj()->save($cadastroPJ);
             }
-    
-        
+
+
             DB::commit();
-    
+
             return redirect()->route('site.cadastro_sucesso');
         } catch (\Exception $e) {
-            #Da um roolbakc caso os dados esteja errados 
+            #Da um roolbakc caso os dados esteja errados
             DB::rollBack();
-    
-            
+
+
             Log::error('Erro durante o cadastro: ' . $e->getMessage());
-    
+
             return redirect()->back()->with('error', 'Ocorreu um erro durante o cadastro. Tente novamente.');
         }
     }
@@ -83,92 +84,90 @@ class CadastroController extends Controller
 
     public function processarCadastroPF(Request $request)
     {
-        #Faz a validação dos dados do form 
+        #Faz a validação dos dados do form
         $validator = $this->validarCadastro($request->all());
-    
+
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
-    
-       #Envia para o armazenamento caso as validações estejam de acordo 
+
+       #Envia para o armazenamento caso as validações estejam de acordo
         $this->armazenarCadastroPF($request->all());
-    
-        
+
+
         return redirect()->route('site.login')->with('success', 'Cadastro PF realizado com sucesso!');
     }
-    
-    
+
+
 
 
     private function armazenarCadastroPF(array $dadosCadastro)
     {
-        
         DB::beginTransaction();
-
+        $dadosCadastro['password'] = Hash::make($dadosCadastro['password']);
         try {
-             #Ele cria o usário principal a qual vai receber os dados principais e deixa de fora os dados de endereço já que vão para outra tabela.  
+             #Ele cria o usário principal a qual vai receber os dados principais e deixa de fora os dados de endereço já que vão para outra tabela.
             $usuario = CadastroUsuario::create(Arr::except($dadosCadastro, ['cep', 'logradouro', 'numero', 'bairro', 'municipio', 'estado', 'complemento']));
-
-            dd($usuario);
             #Faz a associação dos dados que seram exclusivos para pessoa juridica, chamando a função que vai separar os dados
             $pf = $this->criarCadastroPF($dadosCadastro);
 
              #Salva os dados exlusivos do PF
             $usuario->cadastro_pf()->save($pf);
 
-            #Cria o endereço e associa os dados 
+            #Cria o endereço e associa os dados
             $endereco = new Endereco(Arr::only($dadosCadastro, ['cep', 'logradouro', 'numero', 'bairro', 'municipio', 'estado', 'complemento']));
             $usuario->endereco()->save($endereco);
 
-           
+
             DB::commit();
         } catch (\Exception $e) {
-         
+
             DB::rollBack();
 
-           
+
             Log::error('Erro durante o cadastro PF: ' . $e->getMessage());
 
-            
+
             return redirect()->back()->with('error', 'Ocorreu um erro durante o cadastro PF. Tente novamente.');
         }
 
-    
+
         return redirect()->route('site.login')->with('success', 'Cadastro PF realizado com sucesso!');
     }
 
-    
+
     public function processarCadastroPJ(Request $request)
     {
-        #Faz a validação dos dados do form 
+        #Faz a validação dos dados do form
         $validator = $this->validarCadastro($request->all());
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        #Envia para o armazenamento caso as validações estejam de acordo 
+        #Envia para o armazenamento caso as validações estejam de acordo
         $this->armazenarCadastroPJ($request->all());
 
-        
+
         return redirect()->route('site.login')->with('success', 'Cadastro PJ realizado com sucesso!');
     }
 
 
-   
+
     private function armazenarCadastroPJ(array $dadosCadastro)#Armazenar o cadastro do PJ
     {
 
         DB::beginTransaction();
+        $dadosCadastro['password'] = Hash::make($dadosCadastro['password']);
 
         try {
-            #Ele cria o usário principal a qual vai receber os dados principais e deixa de fora os dados de endereço já que vão para outra tabela.  
+            #Ele cria o usário principal a qual vai receber os dados principais e deixa de fora os dados de endereço já que vão para outra tabela.
             $usuario = CadastroUsuario::create(Arr::except($dadosCadastro, ['cep', 'logradouro', 'numero', 'bairro', 'municipio', 'estado', 'complemento']));
 
             #Faz a associação dos dados que seram exclusivos para pessoa juridica, chamando a função que vai separar os dados
             $pj = $this->criarCadastroPJ($dadosCadastro);
 
-            #Salva os dados exlusivos do PJ 
+            #Salva os dados exlusivos do PJ
             $usuario->cadastro_pj()->save($pj);
 
             // Faz a assosição do endereço com o usuário, depois de ter já criado os dados principais do usuario e os exclusivos do PJ
@@ -181,12 +180,12 @@ class CadastroController extends Controller
             #Sé caro houver erro no cadastro ele apaga os dados que estavam sendo cadastrados do usuário
             DB::rollBack();
 
-            Log::error('Erro durante o cadastro PJ: ' . $e->getMessage()); 
+            Log::error('Erro durante o cadastro PJ: ' . $e->getMessage());
 
             return redirect()->back()->with('error', 'Ocorreu um erro durante o cadastro PJ. Tente novamente.');
         }
 
-     
+
         return redirect()->route('site.login')->with('success', 'Cadastro PJ realizado com sucesso!');
     }
 
@@ -223,12 +222,12 @@ class CadastroController extends Controller
 
 
 
-    
+
 
     private function criarEndereco(array $dadosCadastro, CadastroUsuario $usuario) #Criação do endereço para o usuário
     {
-        
-        $endereco = new Endereco([ 
+
+        $endereco = new Endereco([
             'cep' => $dadosCadastro['cep'],
             'logradouro' => $dadosCadastro['logradouro'],
             'numero' => $dadosCadastro['numero'],
@@ -238,17 +237,17 @@ class CadastroController extends Controller
             'complemento' => $dadosCadastro['complemento'] ?? null,
         ]);
 
-        
+
         $usuario->endereco()->save($endereco);
 
         return $endereco;
     }
 
-    
 
 
-    
-    private function validarCadastro(array $dadosCadastro) #Fazendo a validação dos dados 
+
+
+    private function validarCadastro(array $dadosCadastro) #Fazendo a validação dos dados
     {
         $tipoCadastro = $dadosCadastro['tipo_cadastro'] ?? null;
 
@@ -264,7 +263,7 @@ class CadastroController extends Controller
             'municipio' => 'required',
             'estado' => 'required',
             'complemento' => 'nullable',
-            'senha' => 'required|min:6',
+            'password' => 'required|min:6',
         ];
 
         $mensagens = [
@@ -334,7 +333,7 @@ class CadastroController extends Controller
     private function mensagensCadastroPF()
     {
         return [
-         
+
         ];
     }
 
@@ -352,7 +351,7 @@ class CadastroController extends Controller
     private function mensagensCadastroPJ()
     {
         return [
-            
+
         ];
     }
 }

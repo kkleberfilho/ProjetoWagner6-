@@ -3,7 +3,7 @@
 @section('titulo', 'Cadastro PF')
 
 @section('conteudo')
-   
+
     <div class="cadastro">
         <div class="cadastro_tamanho">
             <h1>Cadastro</h1>
@@ -70,14 +70,14 @@
                         <p class="error-message">{{ $message }}</p>
                     @enderror
                     <br>
-                    <input type="password" name="senha" placeholder="Senha" class="borda-preta">
+                    <input type="password" name="password" placeholder="Senha" class="borda-preta">
                     <br>
                 </div>
 
                 <button type="submit" class="borda-preta">ENVIAR</button>
             </form>
-        
-  
+
+
         </div>
     </div>
 
@@ -98,7 +98,7 @@
 
             if (tipoCadastro === 'pf') {
                 mostrarCamposPF();
-                camposPf.style.display = 'block'; 
+                camposPf.style.display = 'block';
             } else if (tipoCadastro === 'pj') {
                 camposPf.style.display = 'none';
             } else {
