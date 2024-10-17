@@ -7,11 +7,13 @@ use App\Models\CadastroUsuario;
 use App\Models\CadastroPF;
 use App\Models\CadastroPJ;
 use App\Models\Endereco;
+use App\Models\ProdutosPontosCasa;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Arr;
+
 
 
 class CadastroController extends Controller
@@ -42,11 +44,16 @@ class CadastroController extends Controller
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
+
+             // Armazena os dados do formulário na sessão
+            session()->flashInput($request->input());
+            return redirect()->back()->withErrors($validator);
         }
 
         DB::beginTransaction();
 
-        try {
+        try 
+        {
             #Cria o cadastro usuário
             $cadastroUsuario = CadastroUsuario::create(Arr::except($request->all(), ['enderecos', 'cadastro_pf', 'cadastro_pj']));
 
@@ -64,6 +71,23 @@ class CadastroController extends Controller
                 $cadastroUsuario->cadastro_pj()->save($cadastroPJ);
             }
 
+            #Obtém o ID do produto selecionado
+            $produtoSelecionadoId = $request->input('produto_selecionado_id');
+
+            # Verifica se o ID do produto foi fornecido
+            if ($produtoSelecionadoId) {
+
+                # Busca o produto selecionado no banco de dados
+                $produtoPontosCasa = ProdutosPontosCasa::find($produtoSelecionadoId);
+
+                 # Se o produto for encontrado, associa-o ao usuário
+                if ($produtoPontosCasa) {
+                    $usuario->produtosPontosCasa()->attach($produtoPontosCasa);
+                }
+            }
+           
+
+
 
             DB::commit();
 
@@ -80,6 +104,12 @@ class CadastroController extends Controller
     }
 
 
+
+
+
+
+
+################################## Parte Voltada a ( PF ) ################################################################
 
 
     public function processarCadastroPF(Request $request)
@@ -112,7 +142,7 @@ class CadastroController extends Controller
             $pf = $this->criarCadastroPF($dadosCadastro);
 
              #Salva os dados exlusivos do PF
-            $usuario->cadastro_pf()->save($pf);
+            $usuario->cadastro_pf()->save($pf);   
 
             #Cria o endereço e associa os dados
             $endereco = new Endereco(Arr::only($dadosCadastro, ['cep', 'logradouro', 'numero', 'bairro', 'municipio', 'estado', 'complemento']));
@@ -134,6 +164,45 @@ class CadastroController extends Controller
 
         return redirect()->route('site.login')->with('success', 'Cadastro PF realizado com sucesso!');
     }
+
+
+
+    private function criarCadastroPF(array $dadosCadastro)#Cria o cadastro dos dados especificos da pessoa fisica
+    {
+        return new CadastroPF([
+            'cpf' => $dadosCadastro['cpf'],
+            'nascimento' => $dadosCadastro['nascimento'],
+            'genero' => $dadosCadastro['genero'],
+            'nome_completo' => $dadosCadastro['nome_completo'],
+        ]);
+    }
+
+
+
+    private function regrasCadastroPF()#Regas para validação dos dados, chamado na função validarcadastro
+    {
+        return [
+            'cpf' => 'required|string|unique:cadastro_pf,cpf',
+            'nascimento' => 'required|date',
+            'genero' => 'required|in:masculino,feminino,outro',
+            'nome_completo' => 'required|string',
+        ];
+    }
+
+
+    private function mensagensCadastroPF()
+    {
+        return [
+
+        ];
+    }
+
+
+
+
+################################## Parte Voltada a ( PJ ) ################################################################
+
+
 
 
     public function processarCadastroPJ(Request $request)
@@ -191,6 +260,40 @@ class CadastroController extends Controller
 
 
 
+    private function criarCadastroPJ(array $dadosCadastro)#Cria o cadastro dos dados especificos da pessoa juridica
+    {
+        return new CadastroPJ([
+            'cnpj' => $dadosCadastro['cnpj'],
+            'inscricao_estadual' => $dadosCadastro['inscricao_estadual'],
+            'tipo_empresa' => $dadosCadastro['tipo_empresa'],
+            'razao_social' => $dadosCadastro['razao_social'],
+            'nome_fantasia' => $dadosCadastro['nome_fantasia'],
+        ]);
+    }
+
+
+    private function regrasCadastroPJ() #Regas para validação dos dados, chamado na função validarcadastro
+    {
+        return [
+            'cnpj' => 'required|string|unique:cadastro_pj,cnpj',
+            'inscricao_estadual' => 'required|string|unique:cadastro_pj,inscricao_estadual',
+            'tipo_empresa' => 'required|string',
+            'razao_social' => 'required|string',
+            'nome_fantasia' => 'required|string',
+        ];
+    }
+
+    private function mensagensCadastroPJ()
+    {
+        return [
+
+        ];
+    }
+
+
+
+################################## SENHA - CADASTRO - DADOS ################################################################
+
 
     public function alterarSenha(Request $request, $id)
     {
@@ -220,10 +323,6 @@ class CadastroController extends Controller
 
 
 
-
-
-
-
     private function criarEndereco(array $dadosCadastro, CadastroUsuario $usuario) #Criação do endereço para o usuário
     {
 
@@ -246,6 +345,31 @@ class CadastroController extends Controller
 
 
 
+    public function storeProdutosEndereco(Request $request)
+    {
+        $enderecoId = $request->input('endereco_id');
+        $produtoIds = $request->input('produto_id');
+
+        if (!$enderecoId || !$produtoIds) {
+            return redirect()->back()->withErrors('Selecione um endereço e pelo menos um produto.');
+        }
+
+        $usuario = CadastroUsuario::find(Auth::user()->id);
+        $endereco = $usuario->enderecos()->find($enderecoId);
+
+        if (!$endereco) {
+            return redirect()->back()->withErrors('Endereço não encontrado.');
+        }
+
+        $produtosPontosCasa = ProdutosPontosCasa::findMany($produtoIds);
+
+        // Sincroniza os produtos com o endereço, removendo os que não foram selecionados
+        $endereco->produtosPontosCasa()->sync($produtoIds);
+
+        return redirect()->route('site.cadastro_pf')->with('success', 'Produtos adicionados com sucesso!');
+    }
+
+
 
     private function validarCadastro(array $dadosCadastro) #Fazendo a validação dos dados
     {
@@ -264,11 +388,15 @@ class CadastroController extends Controller
             'estado' => 'required',
             'complemento' => 'nullable',
             'password' => 'required|min:6',
+            'produto_selecionado_id' => 'required|integer|exists:produtos_pontos_casa,id',
         ];
 
         $mensagens = [
             'nome_de_usuario.required' => 'O campo nome de usuário é obrigatório.',
-             'email.required' => 'Por favor, forneça um endereço de e-mail.',
+            'email.required' => 'Por favor, forneça um endereço de e-mail.',
+            'produto_selecionado_id.required' => 'É necessário selecionar um produto.',
+            'produto_selecionado_id.integer' => 'O ID do produto deve ser um número inteiro.',
+            'produto_selecionado_id.exists' => 'O produto selecionado não existe.',
         ];
 
         if ($tipoCadastro === 'pf') { #checando as regras de validação da pessoa fisica e juridica
@@ -299,59 +427,6 @@ class CadastroController extends Controller
         $usuario->senha = bcrypt($dados['senha']);
     }
 
-    private function criarCadastroPF(array $dadosCadastro)#Cria o cadastro dos dados especificos da pessoa fisica
-    {
-        return new CadastroPF([
-            'cpf' => $dadosCadastro['cpf'],
-            'nascimento' => $dadosCadastro['nascimento'],
-            'genero' => $dadosCadastro['genero'],
-            'nome_completo' => $dadosCadastro['nome_completo'],
-        ]);
-    }
+   
 
-    private function criarCadastroPJ(array $dadosCadastro)#Cria o cadastro dos dados especificos da pessoa juridica
-    {
-        return new CadastroPJ([
-            'cnpj' => $dadosCadastro['cnpj'],
-            'inscricao_estadual' => $dadosCadastro['inscricao_estadual'],
-            'tipo_empresa' => $dadosCadastro['tipo_empresa'],
-            'razao_social' => $dadosCadastro['razao_social'],
-            'nome_fantasia' => $dadosCadastro['nome_fantasia'],
-        ]);
-    }
-
-    private function regrasCadastroPF()#Regas para validação dos dados, chamado na função validarcadastro
-    {
-        return [
-            'cpf' => 'required|string|unique:cadastro_pf,cpf',
-            'nascimento' => 'required|date',
-            'genero' => 'required|in:masculino,feminino,outro',
-            'nome_completo' => 'required|string',
-        ];
-    }
-
-    private function mensagensCadastroPF()
-    {
-        return [
-
-        ];
-    }
-
-    private function regrasCadastroPJ() #Regas para validação dos dados, chamado na função validarcadastro
-    {
-        return [
-            'cnpj' => 'required|string|unique:cadastro_pj,cnpj',
-            'inscricao_estadual' => 'required|string|unique:cadastro_pj,inscricao_estadual',
-            'tipo_empresa' => 'required|string',
-            'razao_social' => 'required|string',
-            'nome_fantasia' => 'required|string',
-        ];
-    }
-
-    private function mensagensCadastroPJ()
-    {
-        return [
-
-        ];
-    }
 }

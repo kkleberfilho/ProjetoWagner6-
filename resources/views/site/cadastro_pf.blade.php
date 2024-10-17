@@ -4,6 +4,10 @@
 
 @section('conteudo')
 
+    <script src="{{ asset('js/jquery.mask.js') }}"></script>
+    
+    
+
     <div class="cadastro">
         <div class="cadastro_tamanho">
             <h1>Cadastro</h1>
@@ -28,14 +32,14 @@
                         <p class="error-message">{{ $message }}</p>
                         @enderror
                     <br>
-                   <input type="text" name="cpf" placeholder="CPF" class="borda-preta" 									@if(old('tipo_cadastro') == 'pf') required @endif>
+                   <input id="cpf" type="text" name="cpf" placeholder="CPF" class="borda-preta" @if(old('tipo_cadastro') == 'pf') required @endif>
                         @error('cpf')
                             <p class="error-message">{{ $message }}</p>
                         @enderror
                     <br>
-                    <input type="date" name="nascimento" placeholder="Nascimento" class="borda-preta" 						@if(old('tipo_cadastro') == 'pf') required @endif>
+                    <input type="date" name="nascimento" placeholder="Nascimento" class="borda-preta" @if(old('tipo_cadastro') == 'pf') required @endif>
                     <br>
-                   <input type="tel" name="celular" placeholder="Celular" class="borda-preta" 							@if(old('tipo_cadastro') == 'pf') required @endif>
+                   <input id="celular" type="tel" name="celular" placeholder="Celular" class="borda-preta" @if(old('tipo_cadastro') == 'pf') required @endif>
                         @error('celular')
                             <p class="error-message">{{ $message }}</p>
                         @enderror
@@ -90,8 +94,16 @@
             </ul>
         </div>
     @endif
+    
+    <script>
+        $(document).ready(() => {
+            $('#cpf').mask('000.000.000-00');
+            $('#celular').mask('(00) 00000-00000');
+        })
+    </script>
 
     <script>
+
        function mostrarCampos() {
             var tipoCadastro = document.querySelector('select[name="tipo_cadastro"]').value;
             var camposPf = document.getElementById('campos-pf');
@@ -114,6 +126,7 @@
 
         document.querySelector('select[name="tipo_cadastro"]').addEventListener('change', function () {
             mostrarCampos();
+
         });
 
         // Chamando a função ao carregar a página para garantir que os campos sejam exibidos corretamente
@@ -122,6 +135,7 @@
         };
 
     </script>
+
 
 @endsection
 

@@ -4,7 +4,12 @@
 
 @section('conteudo')
     <div class="cadastro">
-        <div class="cadastro_tamanho"> 
+        <h1>Home Cadastro</h1>
+    </div>
+@endsection
+
+
+  {{-- <div class="cadastro_tamanho"> 
             <h1>Home Cadastro</h1>
             @if($endereco)
             <h2>Endereço:</h2>
@@ -18,6 +23,4 @@
             @else
             <p>Nenhum endereço cadastrado.</p>
             @endif
-        </div>
-    </div>
-@endsection
+        </div> --}}

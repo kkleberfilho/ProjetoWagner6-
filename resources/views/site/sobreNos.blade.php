@@ -5,9 +5,9 @@
 @section('conteudo') 
 
     <div class="sobreNos">
+        <h1>Sistema Green Points</h1>
         <div class="sobreNos_tamanho">
             
-            <h1>Sistema Green Points</h1>
             <p>Software para gestão de Creditos Verdes<p>
             <br>
             <p>Gestão completa e descomplicada</p>

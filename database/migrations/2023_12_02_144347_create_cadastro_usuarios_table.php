@@ -48,13 +48,29 @@ return new class extends Migration
             $table->string('inscricao_estadual')->unique()->nullable();
             $table->string('nome_fantasia')->unique()->nullable();
         });
-    }
+
+        Schema::create('produtos_pontos_casa', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('cadastro_usuario_id')->constrained();
+            $table->foreignId('endereco_id')->constrained();
+            $table->string('nome_porduto');
+            $table->string('categoria');
+            $table->string('tipo');
+            $table->integer('pontos');
+        });
+
+
+
+    } 
 
     public function down(): void
-    {
+    {   
+        
+        Schema::dropIfExists('produtos_pontos_casa');
         Schema::dropIfExists('cadastro_pf');
         Schema::dropIfExists('cadastro_pj');
         Schema::dropIfExists('enderecos');
         Schema::dropIfExists('cadastro_usuarios');
+        
     }
 };

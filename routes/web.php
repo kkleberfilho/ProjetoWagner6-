@@ -1,10 +1,9 @@
 <?php
-
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\SobreNosController;
-use App\Http\Controllers\CadastroController;
+use App\Http\Controllers\CadastroController; 
 
 Route::middleware('auth')->group(function () {
     Route::prefix('/app')->group(function(){
@@ -13,8 +12,6 @@ Route::middleware('auth')->group(function () {
 });
 
 // Route::get('/home',[HomeController::class, 'home'])->name('site.home');
-
-
 
 Route::get('/cadastro', [CadastroController::class, 'cadastro'])->name('site.cadastro');
 Route::get('/', [SobreNosController::class, 'sobreNos'])->name('site.sobreNos');
@@ -34,4 +31,10 @@ Route::post('/cadastro/pj', [CadastroController::class, 'processarCadastroPJ'])-
 Route::fallback(function () {
     echo 'A página que você está procurando não foi encontrada. <a href="'.route('site.sobreNos').'">Clique aqui</a> para voltar para a página inicial.';
 });
+
+
+
+
+
+
 
